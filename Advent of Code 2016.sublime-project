@@ -1,0 +1,17 @@
+{
+	"build_systems":
+	[
+		{
+			"cmd": "go build",
+			"file_regex": "^(?:\\.\\\\)?(.+?):(\\d+?):(?:(\\d+?):)? (.+)$",
+			"name": "Build",
+			"working_dir": "$file_path"
+		}
+	],
+	"folders":
+	[
+		{
+			"path": "."
+		}
+	]
+}
