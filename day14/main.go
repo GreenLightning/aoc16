@@ -44,19 +44,21 @@ func hashFunctionOne(data []byte) hashValue {
 
 func hashFunctionTwo(data []byte) hashValue {
 	hash := md5.Sum(data)
+	tmp := make([]byte, splitSize)
 	for i := 0; i < 2016; i++ {
-		hash = md5.Sum([]byte(fmt.Sprintf("%x", hash)))
+		hash = md5.Sum(splitAndConvertToHex(hash, tmp))
 	}
 	return hash
 }
 
-func splitHash(hash hashValue) splitValue {
-	split := splitValue{}
+const hextable = "0123456789abcdef"
+
+func splitAndConvertToHex(hash hashValue, result []byte) []byte {
 	for i := 0; i < hashSize; i++ {
-		split[2*i + 0] = hash[i] >> 4
-		split[2*i + 1] = hash[i] & 0xf
+		result[2*i + 0] = hextable[hash[i] >> 4]
+		result[2*i + 1] = hextable[hash[i] & 0xf]
 	}
-	return split
+	return result
 }
 
 func searchForKeys(stream *hashStream) {
@@ -64,8 +66,8 @@ func searchForKeys(stream *hashStream) {
 	triples := 0
 	fmt.Printf("\rFound %d keys and %d triples", keys, triples)
 	for {
-		hex := splitHash(stream.get(0))
-		found, value := hasTriple(hex)
+		split := splitHash(stream.get(0))
+		found, value := hasTriple(split)
 		if  found {
 			triples++
 			fmt.Printf("\rFound %d keys and %d triples", keys, triples)
@@ -85,10 +87,10 @@ func searchForKeys(stream *hashStream) {
 	fmt.Println(newMessage)
 }
 
-func hasTriple(hex splitValue) (bool, byte) {
+func hasTriple(split splitValue) (bool, byte) {
 	for i := 0; i+2 < splitSize; i++ {
-		if hex[i] == hex[i+1] && hex[i] == hex[i+2] {
-			return true, hex[i]
+		if split[i] == split[i+1] && split[i] == split[i+2] {
+			return true, split[i]
 		}
 	}
 	return false, 0
@@ -96,18 +98,27 @@ func hasTriple(hex splitValue) (bool, byte) {
 
 func findQuintuple(stream *hashStream, target byte) bool {
 	for next := 1; next <= 1000; next++ {
-		hex := splitHash(stream.get(next))
+		split := splitHash(stream.get(next))
 		for i := 0; i+4 < splitSize; i++ {
-			if hex[i+0] == target &&
-			   hex[i+1] == target &&
-			   hex[i+2] == target &&
-			   hex[i+3] == target &&
-			   hex[i+4] == target {
+			if split[i+0] == target &&
+			   split[i+1] == target &&
+			   split[i+2] == target &&
+			   split[i+3] == target &&
+			   split[i+4] == target {
 				return true
 			}
 		}
 	}
 	return false
+}
+
+func splitHash(hash hashValue) splitValue {
+	split := splitValue{}
+	for i := 0; i < hashSize; i++ {
+		split[2*i + 0] = hash[i] >> 4
+		split[2*i + 1] = hash[i] & 0xf
+	}
+	return split
 }
 
 type hashStream struct {
