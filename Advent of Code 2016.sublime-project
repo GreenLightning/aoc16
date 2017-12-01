@@ -2,7 +2,7 @@
 	"build_systems":
 	[
 		{
-			"cmd": "go build",
+			"shell_cmd": "go build || echo Shit™",
 			"file_regex": "^(?:\\.\\\\)?(.+?):(\\d+?):(?:(\\d+?):)? (.+)$",
 			"name": "Build",
 			"working_dir": "$file_path"
