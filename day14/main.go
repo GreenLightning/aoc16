@@ -125,24 +125,49 @@ type hashStream struct {
 	salt string
 	index int
 	function hashFunction
-	values []hashValue
+	values circularBuffer
 }
 
 func newHashStream(salt string, function hashFunction) *hashStream {
-	return &hashStream{ salt, 0, function, nil }
+	return &hashStream{ salt, 0, function, makeCircularBuffer() }
 }
 
 func (stream *hashStream) get(offset int) hashValue {
-	for offset >= len(stream.values) {
-		source := stream.salt + strconv.Itoa(stream.index + len(stream.values))
-		stream.values = append(stream.values, stream.function([]byte(source)))
+	for offset >= stream.values.length {
+		source := stream.salt + strconv.Itoa(stream.index + stream.values.length)
+		stream.values.append(stream.function([]byte(source)))
 	}
-	return stream.values[offset]
+	return stream.values.get(offset)
 }
 
 func (stream *hashStream) advance() {
 	stream.index++
-	if len(stream.values) > 0 {
-		stream.values = stream.values[1:]
+	stream.values.advance()
+}
+
+type circularBuffer struct {
+	start, length int
+	data []hashValue
+}
+
+func makeCircularBuffer() circularBuffer {
+	return circularBuffer{ 0, 0, make([]hashValue, 0x400) }
+}
+
+func (buffer * circularBuffer) get(index int) hashValue {
+	pos := (buffer.start + index) & 0x3ff
+	return buffer.data[pos]
+}
+
+func (buffer *circularBuffer) append(value hashValue) {
+	pos := (buffer.start + buffer.length) & 0x3ff
+	buffer.data[pos] = value
+	buffer.length++
+}
+
+func (buffer *circularBuffer) advance() {
+	if buffer.length > 0 {
+		buffer.start = (buffer.start + 1) & 0x3ff
+		buffer.length--
 	}
 }
