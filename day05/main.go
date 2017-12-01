@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
@@ -9,12 +10,16 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Printf("usage: %s <input>\n", os.Args[0])
-		return
-	}
+	file, err := os.Open("input.txt")
+	if err != nil { panic(err) }
 
-	input := os.Args[1]
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+
+	scanner.Scan()
+	input := scanner.Text()
 
 	{ // --- Part One ---
 		fmt.Print("Password: ")
