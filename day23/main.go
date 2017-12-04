@@ -88,7 +88,7 @@ func parseArg(line string) (argument, string) {
 func parseRegArg(line string) (argument, string) {
 	arg, line := parseArg(line)
 	if arg.aType == argTypeVal {
-		panic("expected register put found literal value")
+		panic("expected register but found literal value")
 	}
 	return arg, line
 }

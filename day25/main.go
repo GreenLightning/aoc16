@@ -25,16 +25,22 @@ func main() {
 		instructions = append(instructions, i)
 	}
 
-	fmt.Println("--- Part One ---")
-	m := machine{}
-	m.run(instructions)
-	fmt.Println(m.a)
-
-	fmt.Println("--- Part Two ---")
-	m = machine{}
-	m.c = 1
-	m.run(instructions)
-	fmt.Println(m.a)
+	for i := 0; ; i++ {
+		m := machine{}
+		m.a = i
+		m.run(instructions, 1000)
+		valid := len(m.output) > 0
+		for j := 0; j < len(m.output); j++ {
+			if m.output[j] != j % 2 {
+				valid = false
+				break
+			}
+		}
+		if valid {
+			fmt.Println(i)
+			break
+		}
+	}
 }
 
 const (
@@ -50,6 +56,7 @@ const (
 	instrTypeInc
 	instrTypeDec
 	instrTypeJnz
+	instrTypeOut
 )
 
 type argument struct {
@@ -110,6 +117,10 @@ func parseInstruction(line string) instruction {
 		x, line := parseArg(line)
 		y, _ := parseArg(line)
 		return instruction{ instrTypeJnz, x, y }
+	} else if strings.HasPrefix(line, "out ") {
+		line = line[4:]
+		x, _ := parseArg(line)
+		return instruction{ instrTypeOut, x, argument{} }
 	} else {
 		panic(fmt.Sprint("cannot parse instruction: ", line))
 	}
@@ -117,11 +128,12 @@ func parseInstruction(line string) instruction {
 
 type machine struct {
 	a, b, c, d int
+	output []int
 }
 
-func (m *machine) run(instructions []instruction) {
+func (m *machine) run(instructions []instruction, limit int) {
 	ip := 0
-	for ip >= 0 && ip < len(instructions) {
+	for ip >= 0 && ip < len(instructions) && len(m.output) < limit {
 		i := instructions[ip]
 		ip += m.execute(i)
 	}
@@ -147,6 +159,10 @@ func (m *machine) execute(i instruction) int {
 			} else {
 				return 1
 			}
+		case instrTypeOut:
+			result := m.getVal(i.x)
+			m.output = append(m.output, result)
+			return 1
 		default: panic(fmt.Sprintf("unknown instruction type %d", i.iType))
 	}
 }
