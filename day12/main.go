@@ -25,10 +25,12 @@ func main() {
 		instructions = append(instructions, i)
 	}
 
+	fmt.Println("--- Part One ---")
 	m := machine{}
 	m.run(instructions)
 	fmt.Println(m.a)
 
+	fmt.Println("--- Part Two ---")
 	m = machine{}
 	m.c = 1
 	m.run(instructions)
@@ -106,7 +108,7 @@ func parseInstruction(line string) instruction {
 	} else if strings.HasPrefix(line, "jnz ") {
 		line = line[4:]
 		x, line := parseArg(line)
-		y, line := parseArg(line)
+		y, _ := parseArg(line)
 		return instruction{ instrTypeJnz, x, y }
 	} else {
 		panic(fmt.Sprint("cannot parse instruction: ", line))
