@@ -51,7 +51,7 @@ func main() {
 
 		i := 0
 		for elves.length() > 1 {
-			for iteration := 0; elves.length() > 1 && iteration < 1024; iteration++ {
+			for iteration := 0; elves.length() > 1 && iteration < 4096; iteration++ {
 				index := (i + elves.length() / 2) % elves.length()
 				elves.removeIndex(index)
 				if i < index { i++ }
@@ -65,15 +65,14 @@ func main() {
 	}
 }
 
-const maxBucketSize = 1024
+const maxBucketSize = 2048
 
 type bucketList struct {
-	start, end *bucket
+	buckets []bucket
 	total int
 }
 
 type bucket struct {
-	previous, next *bucket
 	data []int
 }
 
@@ -81,49 +80,56 @@ func (list *bucketList) length() int {
 	return list.total
 }
 
+func (list *bucketList) getIndex(index int) int {
+	b, _, index := list.getBucket(index)
+	return b.data[index]
+}
+
 func (list *bucketList) append(value int) {
-	if list.end == nil {
-		b := &bucket{ nil, nil, make([]int, 1, maxBucketSize) }
+	if len(list.buckets) == 0 || len(list.getLastBucket().data) == maxBucketSize {
+		b := bucket{ make([]int, 1, maxBucketSize) }
 		b.data[0] = value
-		list.start, list.end = b, b
-	} else if len(list.end.data) == maxBucketSize {
-		b := &bucket{ list.end, nil, make([]int, 1, maxBucketSize) }
-		b.data[0] = value
-		list.end.next = b
-		list.end = b
+		list.buckets = append(list.buckets, b)
 	} else {
-		list.end.data = append(list.end.data, value)
+		b := list.getLastBucket()
+		b.data = append(b.data, value)
 	}
 	list.total++
 }
 
 func (list *bucketList) removeIndex(index int) {
-	b := list.start
-	for index >= len(b.data) {
-		index -= len(b.data)
-		b = b.next
-	}
-
-	for i, n := index, len(b.data)-1; i < n; i++ {
+	b, bi, index := list.getBucket(index)
+	n := len(b.data) - 1
+	for i := index; i < n; i++ {
 		b.data[i] = b.data[i+1]
 	}
-	b.data = b.data[:len(b.data)-1]
+	b.data = b.data[:n]
 	list.total--
 
-	if b.previous != nil && len(b.data) <= maxBucketSize - len(b.previous.data) {
-		copyBucketData(b.previous, b)
-		b.previous.next = b.next
-		if b.next != nil { b.next.previous = b.previous }
-		if b == list.end { list.end = b.previous }
-	} else if b.next != nil && len(b.data) <= maxBucketSize - len(b.next.data) {
-		copyBucketData(b.next, b)
-		b.next.previous = b.previous
-		if b.previous != nil { b.previous.next = b.next }
-		if b == list.start { list.start = b.next }
+	if bi-1 >= 0 && n <= maxBucketSize - len(list.buckets[bi-1].data) {
+		list.copyBucketData(&list.buckets[bi-1], b)
+		list.removeBucket(bi)
+	} else if bi+1 < len(list.buckets) && n <= maxBucketSize - len(list.buckets[bi+1].data) {
+		list.copyBucketData(b, &list.buckets[bi+1])
+		list.removeBucket(bi+1)
 	}
 }
 
-func copyBucketData(dest, source *bucket) {
+func (list *bucketList) getLastBucket() *bucket {
+	length := len(list.buckets)
+	return &list.buckets[length-1]
+}
+
+func (list *bucketList) getBucket(index int) (*bucket, int, int) {
+	bi := 0
+	for index >= len(list.buckets[bi].data) {
+		index -= len(list.buckets[bi].data)
+		bi++
+	}
+	return &list.buckets[bi], bi, index
+}
+
+func (list *bucketList) copyBucketData(dest, source *bucket) {
 	destLength, sourceLength := len(dest.data), len(source.data)
 	dest.data = dest.data[:destLength + sourceLength]
 	for i := 0; i < sourceLength; i++ {
@@ -131,13 +137,12 @@ func copyBucketData(dest, source *bucket) {
 	}
 }
 
-func (list *bucketList) getIndex(index int) int {
-	b := list.start
-	for index >= len(b.data) {
-		index -= len(b.data)
-		b = b.next
+func (list *bucketList) removeBucket(index int) {
+	n := len(list.buckets) - 1
+	for bi := index; bi < n; bi++ {
+		list.buckets[bi] = list.buckets[bi+1]
 	}
-	return b.data[index]
+	list.buckets = list.buckets[:n]
 }
 
 func toInt(v string) int {
