@@ -100,7 +100,6 @@ type state struct {
 
 type stateInfo struct {
 	current state
-	done bool
 	steps int
 	index int
 }
@@ -117,7 +116,7 @@ func newFinder(grid [][]bool, width, height int, start state) *finder {
 	f.grid = grid
 	f.width, f.height = width, height
 	f.infos = make(map[state]*stateInfo)
-	info := &stateInfo{ start, false, 0, -1 }
+	info := &stateInfo{ start, 0, -1 }
 	f.infos[start] = info
 	f.queue.doPush(info)
 	return f
@@ -126,7 +125,6 @@ func newFinder(grid [][]bool, width, height int, start state) *finder {
 func (f *finder) findShortestPath() (int, bool) {
 	for !f.queue.isEmpty() {
 		info := f.queue.doPop()
-		info.done = true
 		if info.current.dataX == 0 && info.current.dataY == 0 {
 			return info.steps, true
 		}
@@ -152,7 +150,7 @@ func (f *finder) update(next state, x, y int, steps int) {
 			f.queue.doUpdate(info, steps)
 		}
 	} else {
-		info := &stateInfo{ next, false, steps, -1 }
+		info := &stateInfo{ next, steps, -1 }
 		f.infos[next] = info
 		f.queue.doPush(info)
 	}
