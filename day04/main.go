@@ -50,13 +50,19 @@ func calculateChecksum(name string) string {
 	}
 
 	length := len(counts)
-	list := make(EntryList, length)
+	list := make([]Entry, length)
 	index := 0
 	for char, count := range counts {
 		list[index] = Entry{ char, count }
 		index++
 	}
-	sort.Sort(list)
+
+	sort.Slice(list, func(i, j int) bool {
+		if list[i].Count != list[j].Count {
+			return list[i].Count > list[j].Count
+		}
+		return list[i].Character < list[j].Character
+	})
 
 	result := ""
 	for i := 0; i < 5 && i < length; i++ {
@@ -65,26 +71,9 @@ func calculateChecksum(name string) string {
 	return result
 }
 
-type EntryList []Entry
-
 type Entry struct {
 	Character string
 	Count int
-}
-
-func (p *EntryList) Len() int {
-	return len(p)
-}
-
-func (p *EntryList) Less(i, j int) bool {
-	if p[i].Count != p[j].Count {
-		return p[i].Count > p[j].Count
-	}
-	return p[i].Character < p[j].Character
-}
-
-func (p *EntryList) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
 }
 
 func decrypt(name string, id int) string {
