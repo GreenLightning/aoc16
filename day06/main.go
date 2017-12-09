@@ -51,31 +51,17 @@ func updateMaps(maps []map[byte]int, line string) {
 
 func analyze(data map[byte]int) (byte, byte) {
 	length := len(data)
-	list := make(EntryList, length)
+	list := make([]Entry, length)
 	index := 0
 	for char, count := range data {
 		list[index] = Entry{ char, count }
 		index++
 	}
-	sort.Sort(list)
+	sort.Slice(list, func(i, j int) bool { return list[i].Count < list[j].Count })
 	return list[length-1].Character, list[0].Character
 }
-
-type EntryList []Entry
 
 type Entry struct {
 	Character byte
 	Count int
-}
-
-func (p *EntryList) Len() int {
-	return len(p)
-}
-
-func (p *EntryList) Less(i, j int) bool {
-	return p[i].Count < p[j].Count
-}
-
-func (p *EntryList) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
 }
