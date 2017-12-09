@@ -91,28 +91,20 @@ func parseFile(name string) (state, int) {
 
 type state struct {
 	elevator byte
-	pairs    pairList
+	pairs    []pair
 }
-
-type pairList []pair
 
 type pair struct {
 	chip, generator byte
 }
 
-func (p pairList) Len() int {
-	return len(p)
-}
-
-func (p pairList) Less(i, j int) bool {
-	if p[i].chip != p[j].chip {
-		return p[i].chip < p[j].chip
-	}
-	return p[i].generator < p[j].generator
-}
-
-func (p pairList) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
+func (s *state) sort() {
+	sort.Slice(s.pairs, func(i, j int) bool {
+		if s.pairs[i].chip != s.pairs[j].chip {
+			return s.pairs[i].chip < s.pairs[j].chip
+		}
+		return s.pairs[i].generator < s.pairs[j].generator
+	})
 }
 
 func makeTargetState(count int) state {
@@ -155,9 +147,9 @@ type finder struct {
 }
 
 func newFinder(initial, target state, count int) *finder {
-	sort.Sort(initial.pairs)
+	initial.sort()
 	pi := pack(initial, count)
-	sort.Sort(target.pairs)
+	target.sort()
 	ti := pack(target, count)
 	f := &finder{}
 	f.count = count
@@ -241,7 +233,7 @@ func (f *finder) update(s state) {
 
 	sCopy := state{ s.elevator, make([]pair, f.count) }
 	copy(sCopy.pairs, s.pairs)
-	sort.Sort(sCopy.pairs)
+	sCopy.sort()
 	p := pack(sCopy, f.count)
 	if !f.checked[p] {
 		f.checked[p] = true
